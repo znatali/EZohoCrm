@@ -231,39 +231,7 @@ class EZohoCrm
 
         $client->setMethod($method);
 
-        $defaultGetParameters = array('scope' => static::SCOPE);
-
-        if (!empty($this->authToken)) {
-            $defaultGetParameters['authtoken'] = $this->authToken;
-        }
-
-        // GET parameters
-        if (!empty($getParameters)) {
-            $getParameters = array_merge($defaultGetParameters, $getParameters);
-        } else {
-            $getParameters = $defaultGetParameters;
-        }
-        $client->setParameterGet($getParameters);
-
-        // POST parameters
-        if (!empty($postParameters)) {
-            $client->setParameterPost($postParameters);
-        }
-
-        // raw POST data
-        if (!empty($postBody)) {
-            $client->setRawData($postBody, $bodyEncodingType);
-        }
-
-        if (!empty($postParameters) && !empty($postBody)) {
-            \Yii::log(
-                'Attempt to send POST parameters and POST data. ' .
-                "Setting raw POST data for a request will override any POST parameters or file uploads.\n" .
-                EUtils::printVarDump($client, true),
-                'warning',
-                'ext.eZohoCrm'
-            );
-        }
+        $client = $this->setRequestParameters($client, $getParameters, $postParameters, $postBody, $bodyEncodingType);
 
         $client->setAdapter($adapter);
         $adapter->setConfig(array('curloptions' => $this->curlOptions));
@@ -305,6 +273,58 @@ class EZohoCrm
 
             return $this->preprocessResponse($decodedResponse);
         }
+    }
+
+    /**
+     * @param \EHttpClient $client
+     * @param null $getParameters
+     * @param null $postParameters
+     * @param null $postBody
+     * @param null $bodyEncodingType
+     * @return mixed
+     */
+    protected function setRequestParameters(
+        $client,
+        $getParameters = null,
+        $postParameters = null,
+        $postBody = null,
+        $bodyEncodingType = null
+    ) {
+        $defaultGetParameters = array('scope' => static::SCOPE);
+
+        if (!empty($this->authToken)) {
+            $defaultGetParameters['authtoken'] = $this->authToken;
+        }
+
+        // GET parameters
+        if (!empty($getParameters)) {
+            $getParameters = array_merge($defaultGetParameters, $getParameters);
+        } else {
+            $getParameters = $defaultGetParameters;
+        }
+        $client->setParameterGet($getParameters);
+
+        // POST parameters
+        if (!empty($postParameters)) {
+            $client->setParameterPost($postParameters);
+        }
+
+        // raw POST data
+        if (!empty($postBody)) {
+            $client->setRawData($postBody, $bodyEncodingType);
+        }
+
+        if (!empty($postParameters) && !empty($postBody)) {
+            \Yii::log(
+                'Attempt to send POST parameters and POST data. ' .
+                "Setting raw POST data for a request will override any POST parameters or file uploads.\n" .
+                EUtils::printVarDump($client, true),
+                'warning',
+                'ext.eZohoCrm'
+            );
+        }
+
+        return $client;
     }
 
     /**
