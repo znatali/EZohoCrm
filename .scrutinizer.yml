@@ -1,0 +1,7 @@
+tools:
+    php_analyzer: true
+    php_code_sniffer:
+        config:
+            standard: "PSR2"
+    php_pdepend: true
+    php_sim: true
