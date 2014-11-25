@@ -18,6 +18,8 @@
  * Extension was improved by
  * @author: Dmitry Kulikov <kulikovdn@gmail.com>
  *
+ * TODO need to improve error handling, checkResponseOnMultipleRecordRequest must be executed automatically
+ *
  * TODO documentation
  *
  * TODO use Yii::t for translation
@@ -1039,10 +1041,15 @@ class EZohoCrm
      */
     protected function rowToArray($response)
     {
-        $path = array('response', 'result', $this->module, 'row');
-        $rows = EUtils::get($response, $path);
-        if (isset($rows) && is_object($rows)) {
-            EUtils::set($response, $path, array($rows));
+        $paths = array(
+            array('response', 'result', $this->module, 'row'),
+            array('response', 'result', 'row'),
+        );
+        foreach ($paths as $path) {
+            $rows = EUtils::get($response, $path);
+            if (isset($rows) && is_object($rows)) {
+                EUtils::set($response, $path, array($rows));
+            }
         }
 
         return $response;
