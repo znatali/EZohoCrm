@@ -212,6 +212,18 @@ class EZohoCrm
         }
     }
 
+    public function getSystemIdFieldName($module = null)
+    {
+        if (!isset($module)) {
+            $module = $this->module;
+        }
+        if (empty($module)) {
+            throw new EZohoCrmException("Module name can't be empty.", EZohoCrmException::MODULE_NOT_SUPPORTED);
+        }
+
+        return strtoupper($module) . '_ID';
+    }
+
     protected function zohoCrmApiCall(
         $path,
         $method = \EHttpClient::GET,
@@ -527,11 +539,12 @@ class EZohoCrm
      * @param $cvName
      * @param integer $fromIndex
      * @param integer $toIndex
-     * @param null $lastModifiedTime
+     * @param null|string $lastModifiedTime
      * @param bool $excludeNull
      * @param integer $version
      * @return mixed
      * @throws \Exception
+     * @deprecated
      */
     public function getCVRecords(
         $cvName,
@@ -620,7 +633,7 @@ class EZohoCrm
      * @param integer $toIndex
      * @param null $sortColumnString
      * @param string $sortOrderString
-     * @param null $lastModifiedTime
+     * @param null|string $lastModifiedTime
      * @param bool $excludeNull
      * @param integer $version
      * @return mixed
@@ -773,6 +786,7 @@ class EZohoCrm
      * @param integer $version
      * @return mixed
      * @throws \Exception
+     * @deprecated
      */
     public function getSearchRecords(
         $selectColumns = array(),
@@ -792,6 +806,43 @@ class EZohoCrm
             'toIndex' => $toIndex,
             'version' => $version,
         );
+
+        return $this->zohoCrmApiCall($path, \EHttpClient::GET, $getParameters);
+    }
+
+    /**
+     * searchRecords
+     * You can use the searchRecords method to get the list of records that meet your search criteria.
+     * @link https://www.zoho.com/crm/help/api/searchrecords.html
+     * @param array $selectColumns
+     * @param string $criteria
+     * @param bool $excludeNull
+     * @param integer $fromIndex
+     * @param integer $toIndex
+     * @param null|string $lastModifiedTime
+     * @return mixed
+     * @throws \Exception
+     */
+    public function searchRecords(
+        $selectColumns = array(),
+        $criteria,
+        $excludeNull = false,
+        $fromIndex = 1,
+        $toIndex = 20,
+        $lastModifiedTime = null
+    ) {
+        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+
+        $getParameters = array(
+            'selectColumns' => $this->getSelectColumns($selectColumns),
+            'criteria' => "($criteria)",
+            'newFormat' => $this->getNewFormat($excludeNull),
+            'fromIndex' => $fromIndex,
+            'toIndex' => $toIndex,
+        );
+        if (isset($lastModifiedTime)) {
+            $getParameters['lastModifiedTime'] = $lastModifiedTime;
+        }
 
         return $this->zohoCrmApiCall($path, \EHttpClient::GET, $getParameters);
     }
