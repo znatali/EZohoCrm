@@ -18,6 +18,8 @@
  * Extension was improved by
  * @author: Dmitry Kulikov <kulikovdn@gmail.com>
  *
+ * TODO need to improve error handling, checkResponseOnMultipleRecordRequest must be executed automatically
+ *
  * TODO documentation
  *
  * TODO use Yii::t for translation
@@ -210,6 +212,18 @@ class EZohoCrm
         }
     }
 
+    public function getSystemIdFieldName($module = null)
+    {
+        if (!isset($module)) {
+            $module = $this->module;
+        }
+        if (empty($module)) {
+            throw new EZohoCrmException("Module name can't be empty.", EZohoCrmException::MODULE_NOT_SUPPORTED);
+        }
+
+        return strtoupper($module) . '_ID';
+    }
+
     protected function zohoCrmApiCall(
         $path,
         $method = \EHttpClient::GET,
@@ -276,6 +290,7 @@ class EZohoCrm
     }
 
     /**
+     * setRequestParameters
      * @param \EHttpClient $client
      * @param null $getParameters
      * @param null $postParameters
@@ -328,6 +343,7 @@ class EZohoCrm
     }
 
     /**
+     * preprocessResponse
      * Preprocess response before return to main application. If you want to add your own processing it is good idea
      * to override this method.
      * @param $response
@@ -339,6 +355,7 @@ class EZohoCrm
     }
 
     /**
+     * request
      * @param \EHttpClient $client
      * @return mixed
      * @throws \EHttpClientException
@@ -525,11 +542,12 @@ class EZohoCrm
      * @param $cvName
      * @param integer $fromIndex
      * @param integer $toIndex
-     * @param null $lastModifiedTime
+     * @param null|string $lastModifiedTime
      * @param bool $excludeNull
      * @param integer $version
      * @return mixed
      * @throws \Exception
+     * @deprecated
      */
     public function getCVRecords(
         $cvName,
@@ -618,7 +636,7 @@ class EZohoCrm
      * @param integer $toIndex
      * @param null $sortColumnString
      * @param string $sortOrderString
-     * @param null $lastModifiedTime
+     * @param null|string $lastModifiedTime
      * @param bool $excludeNull
      * @param integer $version
      * @return mixed
@@ -724,6 +742,73 @@ class EZohoCrm
     }
 
     /**
+     * getAllRecords
+     * You can use the getAllRecords method to fetch all users data specified in the API request.
+     * getAllRecords unlike getRecords was designed to load all records in module and thus you can't specify
+     * paging and sorting parameters for getAllRecords: fromIndex, toIndex, sortColumnString, sortOrderString.
+     * @link https://www.zoho.com/crm/help/api/getrecords.html
+     * @param array $columns
+     * @param null|callable $callback callback function which will be executed after receiving of each page
+     * with records; callback will receive $rows and $page arguments, both passed by reference
+     * @param boolean $return if this parameter is set to true, function will return array of records otherwise
+     * it will return null, if module contains a lot of records it makes sense to process records page by page
+     * using callback and do not store thousands of records in array because it may require a lot of memory
+     * @param null|string $lastModifiedTime
+     * @param bool $excludeNull
+     * @param integer $version
+     * @param bool $myRecords
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getAllRecords(
+        $columns = array(),
+        $callback = null,
+        $return = true,
+        $lastModifiedTime = null,
+        $excludeNull = false,
+        $version = self::VERSION,
+        $myRecords = false
+    ) {
+        $maxRecordsGetRecords = static::MAX_RECORDS_GET_RECORDS;
+        $result = array();
+        $count = null;
+        $page = 1;
+        while (!isset($count) || $count == $maxRecordsGetRecords) {
+            $records = $this->getRecords(
+                $columns,
+                ($page - 1) * $maxRecordsGetRecords + 1,
+                $page * $maxRecordsGetRecords,
+                'Created Time',
+                static::SORT_ORDER_ASC,
+                $lastModifiedTime,
+                $excludeNull,
+                $version,
+                $myRecords
+            );
+
+            $rows = EUtils::get($records, array('response', 'result', $this->module, 'row'), array());
+            unset($records);
+            $count = count($rows);
+
+            if (is_callable($callback)) {
+                call_user_func_array($callback, array(&$rows, &$page));
+            }
+
+            if ($return) {
+                $result = array_merge($result, $rows);
+            }
+
+            $page++;
+        }
+
+        if ($return) {
+            return $result;
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * getRelatedRecords
      * You can use the getRelatedRecords method to fetch related records.
      * @link https://www.zoho.com/crm/help/api/getrelatedrecords.html
@@ -771,6 +856,7 @@ class EZohoCrm
      * @param integer $version
      * @return mixed
      * @throws \Exception
+     * @deprecated
      */
     public function getSearchRecords(
         $selectColumns = array(),
@@ -790,6 +876,43 @@ class EZohoCrm
             'toIndex' => $toIndex,
             'version' => $version,
         );
+
+        return $this->zohoCrmApiCall($path, \EHttpClient::GET, $getParameters);
+    }
+
+    /**
+     * searchRecords
+     * You can use the searchRecords method to get the list of records that meet your search criteria.
+     * @link https://www.zoho.com/crm/help/api/searchrecords.html
+     * @param array $selectColumns
+     * @param string $criteria
+     * @param bool $excludeNull
+     * @param integer $fromIndex
+     * @param integer $toIndex
+     * @param null|string $lastModifiedTime
+     * @return mixed
+     * @throws \Exception
+     */
+    public function searchRecords(
+        $selectColumns = array(),
+        $criteria,
+        $excludeNull = false,
+        $fromIndex = 1,
+        $toIndex = 20,
+        $lastModifiedTime = null
+    ) {
+        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+
+        $getParameters = array(
+            'selectColumns' => $this->getSelectColumns($selectColumns),
+            'criteria' => "($criteria)",
+            'newFormat' => $this->getNewFormat($excludeNull),
+            'fromIndex' => $fromIndex,
+            'toIndex' => $toIndex,
+        );
+        if (isset($lastModifiedTime)) {
+            $getParameters['lastModifiedTime'] = $lastModifiedTime;
+        }
 
         return $this->zohoCrmApiCall($path, \EHttpClient::GET, $getParameters);
     }
@@ -1031,6 +1154,7 @@ class EZohoCrm
     }
 
     /**
+     * rowToArray
      * This method needed to make response of Zoho CRM API more consequent: API calls containing "row" return data
      * with different structure depending on number of items, there is difference between response with one item and
      * with many items, this methods makes response unified.
@@ -1039,10 +1163,15 @@ class EZohoCrm
      */
     protected function rowToArray($response)
     {
-        $path = array('response', 'result', $this->module, 'row');
-        $rows = EUtils::get($response, $path);
-        if (isset($rows) && is_object($rows)) {
-            EUtils::set($response, $path, array($rows));
+        $paths = array(
+            array('response', 'result', $this->module, 'row'),
+            array('response', 'result', 'row'),
+        );
+        foreach ($paths as $path) {
+            $rows = EUtils::get($response, $path);
+            if (isset($rows) && is_object($rows)) {
+                EUtils::set($response, $path, array($rows));
+            }
         }
 
         return $response;
