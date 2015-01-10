@@ -290,6 +290,7 @@ class EZohoCrm
     }
 
     /**
+     * setRequestParameters
      * @param \EHttpClient $client
      * @param null $getParameters
      * @param null $postParameters
@@ -342,6 +343,7 @@ class EZohoCrm
     }
 
     /**
+     * preprocessResponse
      * Preprocess response before return to main application. If you want to add your own processing it is good idea
      * to override this method.
      * @param $response
@@ -353,6 +355,7 @@ class EZohoCrm
     }
 
     /**
+     * request
      * @param \EHttpClient $client
      * @return mixed
      * @throws \EHttpClientException
@@ -739,6 +742,73 @@ class EZohoCrm
     }
 
     /**
+     * getAllRecords
+     * You can use the getAllRecords method to fetch all users data specified in the API request.
+     * getAllRecords unlike getRecords was designed to load all records in module and thus you can't specify
+     * paging and sorting parameters for getAllRecords: fromIndex, toIndex, sortColumnString, sortOrderString.
+     * @link https://www.zoho.com/crm/help/api/getrecords.html
+     * @param array $columns
+     * @param null|callable $callback callback function which will be executed after receiving of each page
+     * with records; callback will receive $rows and $page arguments, both passed by reference
+     * @param boolean $return if this parameter is set to true, function will return array of records otherwise
+     * it will return null, if module contains a lot of records it makes sense to process records page by page
+     * using callback and do not store thousands of records in array because it may require a lot of memory
+     * @param null|string $lastModifiedTime
+     * @param bool $excludeNull
+     * @param integer $version
+     * @param bool $myRecords
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getAllRecords(
+        $columns = array(),
+        $callback = null,
+        $return = true,
+        $lastModifiedTime = null,
+        $excludeNull = false,
+        $version = self::VERSION,
+        $myRecords = false
+    ) {
+        $maxRecordsGetRecords = static::MAX_RECORDS_GET_RECORDS;
+        $result = array();
+        $count = null;
+        $page = 1;
+        while (!isset($count) || $count == $maxRecordsGetRecords) {
+            $records = $this->getRecords(
+                $columns,
+                ($page - 1) * $maxRecordsGetRecords + 1,
+                $page * $maxRecordsGetRecords,
+                'Created Time',
+                static::SORT_ORDER_ASC,
+                $lastModifiedTime,
+                $excludeNull,
+                $version,
+                $myRecords
+            );
+
+            $rows = EUtils::get($records, array('response', 'result', $this->module, 'row'), array());
+            unset($records);
+            $count = count($rows);
+
+            if (is_callable($callback)) {
+                call_user_func_array($callback, array(&$rows, &$page));
+            }
+
+            if ($return) {
+                $result = array_merge($result, $rows);
+            }
+
+            $page++;
+        }
+
+        if ($return) {
+            return $result;
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * getRelatedRecords
      * You can use the getRelatedRecords method to fetch related records.
      * @link https://www.zoho.com/crm/help/api/getrelatedrecords.html
@@ -1084,6 +1154,7 @@ class EZohoCrm
     }
 
     /**
+     * rowToArray
      * This method needed to make response of Zoho CRM API more consequent: API calls containing "row" return data
      * with different structure depending on number of items, there is difference between response with one item and
      * with many items, this methods makes response unified.
