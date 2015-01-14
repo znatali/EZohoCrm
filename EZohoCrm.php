@@ -246,7 +246,8 @@ class EZohoCrm
 
         $client->setMethod($method);
 
-        $client = $this->setRequestParameters($client, $getParameters, $postParameters, $postBody, $bodyEncodingType);
+        $client = $this->setGetRequestParameters($client, $getParameters);
+        $client = $this->setPostRequestParameters($client, $postParameters, $postBody, $bodyEncodingType);
 
         $client->setAdapter($adapter);
         $adapter->setConfig(array('curloptions' => $this->curlOptions));
@@ -291,28 +292,19 @@ class EZohoCrm
     }
 
     /**
-     * setRequestParameters
+     * setGetRequestParameters
      * @param \EHttpClient $client
      * @param null $getParameters
-     * @param null $postParameters
-     * @param null $postBody
-     * @param null $bodyEncodingType
      * @return mixed
      */
-    protected function setRequestParameters(
-        $client,
-        $getParameters = null,
-        $postParameters = null,
-        $postBody = null,
-        $bodyEncodingType = null
-    ) {
+    protected function setGetRequestParameters($client, $getParameters)
+    {
         $defaultGetParameters = array('scope' => static::SCOPE);
 
         if (!empty($this->authToken)) {
             $defaultGetParameters['authtoken'] = $this->authToken;
         }
 
-        // GET parameters
         if (isset($getParameters) && array_key_exists('excludeNull', $getParameters)) {
             $getParameters['newFormat'] = static::getNewFormat($getParameters['excludeNull']);
             unset($getParameters['excludeNull']);
@@ -324,6 +316,19 @@ class EZohoCrm
         }
         $client->setParameterGet($getParameters);
 
+        return $client;
+    }
+
+    /**
+     * setPostRequestParameters
+     * @param \EHttpClient $client
+     * @param null $postParameters
+     * @param null $postBody
+     * @param null $bodyEncodingType
+     * @return mixed
+     */
+    protected function setPostRequestParameters($client, $postParameters, $postBody, $bodyEncodingType)
+    {
         // POST parameters
         if (!empty($postParameters)) {
             $client->setParameterPost($postParameters);
