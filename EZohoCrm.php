@@ -874,7 +874,7 @@ class EZohoCrm
      * getSearchRecords
      * You can use this method to search records by expressions of the selected columns.
      * @link https://www.zoho.com/crm/help/api/getsearchrecords.html
-     * @param array $selectColumns
+     * @param array $selectColumns columns which should be selected, use empty array to select all
      * @param $searchCondition
      * @param bool $excludeNull
      * @param integer $fromIndex
@@ -885,7 +885,7 @@ class EZohoCrm
      * @deprecated
      */
     public function getSearchRecords(
-        $selectColumns = array(),
+        $selectColumns,
         $searchCondition,
         $excludeNull = false,
         $fromIndex = 1,
@@ -910,7 +910,7 @@ class EZohoCrm
      * searchRecords
      * You can use the searchRecords method to get the list of records that meet your search criteria.
      * @link https://www.zoho.com/crm/help/api/searchrecords.html
-     * @param array $selectColumns
+     * @param array $selectColumns columns which should be selected, use empty array to select all
      * @param string $criteria
      * @param bool $excludeNull
      * @param integer $fromIndex
@@ -920,7 +920,7 @@ class EZohoCrm
      * @throws \Exception
      */
     public function searchRecords(
-        $selectColumns = array(),
+        $selectColumns,
         $criteria,
         $excludeNull = false,
         $fromIndex = 1,
@@ -947,7 +947,7 @@ class EZohoCrm
      * getSearchRecordsByPDC
      * You can use this method to search the values based on predefined columns.
      * @link https://www.zoho.com/crm/help/api/getsearchrecordsbypdc.html
-     * @param array $selectColumns
+     * @param array $selectColumns columns which should be selected, use empty array to select all
      * @param $searchColumn
      * @param $searchValue
      * @param bool $excludeNull
@@ -956,7 +956,7 @@ class EZohoCrm
      * @throws \Exception
      */
     public function getSearchRecordsByPDC(
-        $selectColumns = array(),
+        $selectColumns,
         $searchColumn,
         $searchValue,
         $excludeNull = false,
