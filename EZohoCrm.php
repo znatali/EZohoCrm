@@ -394,6 +394,22 @@ class EZohoCrm
     }
 
     /**
+     * getPath
+     * Get path for Zoho CRM API request.
+     * @param string $function name of function
+     * @param null|string $module name of module
+     * @return string path for Zoho CRM API request.
+     */
+    protected function getPath($function, $module = null)
+    {
+        if (!isset($module)) {
+            $module = $this->module;
+        }
+
+        return static::BASE_URL . $module . '/' . $function;
+    }
+
+    /**
      * convertLead
      * You can use this method to convert lead to potential, account and contact.
      * @link https://www.zoho.com/crm/help/api/convertlead.html
@@ -466,7 +482,7 @@ class EZohoCrm
         }
         $xmlData .= '</' . $this->module . '>';
 
-        $path = static::BASE_URL . $moduleBefore . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__, $moduleBefore);
 
         $getParameters = array(
             'leadId' => (string)$leadId,
@@ -491,7 +507,7 @@ class EZohoCrm
      */
     public function deleteRecords($id)
     {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array('id' => $id);
 
@@ -558,7 +574,7 @@ class EZohoCrm
         $excludeNull = false,
         $version = self::VERSION
     ) {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'cvName' => $cvName,
@@ -608,7 +624,7 @@ class EZohoCrm
      */
     public function getFields()
     {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         return $this->zohoCrmApiCall($path, \EHttpClient::GET);
     }
@@ -622,7 +638,7 @@ class EZohoCrm
      */
     public function getModules()
     {
-        $path = static::BASE_URL . static::MODULE_INFO . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__, static::MODULE_INFO);
 
         return $this->zohoCrmApiCall($path, \EHttpClient::GET);
     }
@@ -688,7 +704,7 @@ class EZohoCrm
      */
     public function getRecordById($id, $excludeNull = false, $version = self::VERSION)
     {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'id' => (string)$id,
@@ -726,7 +742,7 @@ class EZohoCrm
         $version = self::VERSION,
         $myRecords = false
     ) {
-        $path = static::BASE_URL . $this->module . '/' . ($myRecords ? 'getMyRecords' : __FUNCTION__);
+        $path = $this->getPath($myRecords ? 'getMyRecords' : __FUNCTION__);
 
         $getParameters = array(
             'selectColumns' => $this->getSelectColumns($columns),
@@ -832,7 +848,7 @@ class EZohoCrm
             );
         }
 
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'parentModule' => (string)$parentModule,
@@ -867,7 +883,7 @@ class EZohoCrm
         $toIndex = 20,
         $version = self::VERSION
     ) {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'selectColumns' => $this->getSelectColumns($selectColumns),
@@ -902,7 +918,7 @@ class EZohoCrm
         $toIndex = 20,
         $lastModifiedTime = null
     ) {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'selectColumns' => $this->getSelectColumns($selectColumns),
@@ -937,7 +953,7 @@ class EZohoCrm
         $excludeNull = false,
         $version = self::VERSION
     ) {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'selectColumns' => $this->getSelectColumns($selectColumns),
@@ -976,7 +992,7 @@ class EZohoCrm
      */
     public function getUsers($type, $excludeNull = false)
     {
-        $path = static::BASE_URL . static::MODULE_USERS . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__, static::MODULE_USERS);
 
         $getParameters = array(
             'type' => (string)$type,
@@ -1007,7 +1023,7 @@ class EZohoCrm
         $excludeNull = false,
         $version = self::VERSION
     ) {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'wfTrigger' => (string)$wfTrigger,
@@ -1087,7 +1103,7 @@ class EZohoCrm
      */
     public function updateRecords($id, $records, $wfTrigger = false, $excludeNull = false, $version = self::VERSION)
     {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'id' => (string)$id,
@@ -1114,7 +1130,7 @@ class EZohoCrm
      */
     public function updateRelatedRecords($relatedModule, $id, $records)
     {
-        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+        $path = $this->getPath(__FUNCTION__);
 
         $getParameters = array(
             'relatedModule' => (string)$relatedModule,
