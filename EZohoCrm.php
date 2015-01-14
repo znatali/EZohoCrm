@@ -246,6 +246,11 @@ class EZohoCrm
 
         $client->setMethod($method);
 
+        if (isset($getParameters) && array_key_exists('excludeNull', $getParameters)) {
+            $getParameters['newFormat'] = static::getNewFormat($getParameters['excludeNull']);
+            unset($getParameters['excludeNull']);
+        }
+
         $client = $this->setRequestParameters($client, $getParameters, $postParameters, $postBody, $bodyEncodingType);
 
         $client->setAdapter($adapter);
@@ -487,7 +492,7 @@ class EZohoCrm
         $getParameters = array(
             'leadId' => (string)$leadId,
             'xmlData' => $xmlData,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'version' => $version,
         );
 
@@ -581,7 +586,7 @@ class EZohoCrm
             'fromIndex' => $fromIndex,
             'toIndex' => $toIndex,
             'lastModifiedTime' => $lastModifiedTime,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'version' => $version,
         );
 
@@ -687,9 +692,9 @@ class EZohoCrm
      * @param $excludeNull
      * @return integer
      */
-    protected function getNewFormat($excludeNull)
+    protected static function getNewFormat($excludeNull)
     {
-        return ($excludeNull ? 1 : 2);
+        return $excludeNull ? 1 : 2;
     }
 
     /**
@@ -708,7 +713,7 @@ class EZohoCrm
 
         $getParameters = array(
             'id' => (string)$id,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'version' => $version,
         );
 
@@ -853,7 +858,7 @@ class EZohoCrm
         $getParameters = array(
             'parentModule' => (string)$parentModule,
             'id' => (string)$id,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'fromIndex' => (string)$fromIndex,
             'toIndex' => (string)$toIndex,
         );
@@ -888,7 +893,7 @@ class EZohoCrm
         $getParameters = array(
             'selectColumns' => $this->getSelectColumns($selectColumns),
             'searchCondition' => $searchCondition,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'fromIndex' => $fromIndex,
             'toIndex' => $toIndex,
             'version' => $version,
@@ -923,7 +928,7 @@ class EZohoCrm
         $getParameters = array(
             'selectColumns' => $this->getSelectColumns($selectColumns),
             'criteria' => "($criteria)",
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'fromIndex' => $fromIndex,
             'toIndex' => $toIndex,
         );
@@ -959,7 +964,7 @@ class EZohoCrm
             'selectColumns' => $this->getSelectColumns($selectColumns),
             'searchColumn' => (string)$searchColumn,
             'searchValue' => (string)$searchValue,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'version' => $version,
         );
 
@@ -996,7 +1001,7 @@ class EZohoCrm
 
         $getParameters = array(
             'type' => (string)$type,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
         );
 
         return $this->zohoCrmApiCall($path, \EHttpClient::GET, $getParameters);
@@ -1028,7 +1033,7 @@ class EZohoCrm
         $getParameters = array(
             'wfTrigger' => (string)$wfTrigger,
             'isApproval' => (string)$isApproval,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'version' => $version,
         );
         if ($duplicateCheck) {
@@ -1108,7 +1113,7 @@ class EZohoCrm
         $getParameters = array(
             'id' => (string)$id,
             'wfTrigger' => (string)$wfTrigger,
-            'newFormat' => $this->getNewFormat($excludeNull),
+            'excludeNull' => $excludeNull,
             'version' => $version,
         );
         $postParameters = array(
