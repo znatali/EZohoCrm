@@ -13,16 +13,17 @@
  * @license The MIT License
  * @category Yii 1.1
  * @package ext\EZohoCrm
- * @version 2.0
  *
  * Extension was improved by
  * @author: Dmitry Kulikov <kulikovdn@gmail.com>
  *
- * TODO need to improve error handling, checkResponseOnMultipleRecordRequest must be executed automatically
+ * TODO need to improve error handling, checkResponseOnMultipleRecordsRequest must be executed automatically
  *
  * TODO documentation
  *
  * TODO use Yii::t for translation
+ *
+ * TODO some methods should be declared static
  *
  * TODO unit tests
  *
@@ -1035,14 +1036,14 @@ class EZohoCrm
      */
     public function transformRecordsToXmlData($records, $method)
     {
-        $modulesNotSupportedForMultipleInsert = array(
+        $modulesNotSupportedForMultipleInserts = array(
             static::MODULE_QUOTES,
             static::MODULE_SALES_ORDERS,
             static::MODULE_INVOICES,
             static::MODULE_PURCHASE_ORDERS
         );
 
-        if (count($records) > 1 && in_array($this->module, $modulesNotSupportedForMultipleInsert)) {
+        if (count($records) > 1 && in_array($this->module, $modulesNotSupportedForMultipleInserts)) {
             throw new EZohoCrmException(
                 "Module $this->module does not support multiple inserts.",
                 EZohoCrmException::MODULE_NOT_SUPPORTED
@@ -1136,7 +1137,15 @@ class EZohoCrm
         echo '</pre>';
     }
 
-    public function checkResponseOnMultipleRecordRequest($response, $records)
+    /**
+     * checkResponseOnMultipleRecordsRequest
+     * You can use this method to check response on multiple records requests like multiple insertRecords or
+     * updateRecords.
+     * @param mixed $response response from Zoho CRM API
+     * @param array $records array of records which were sent to Zoho CRM API
+     * @throws EZohoCrmException
+     */
+    public static function checkResponseOnMultipleRecordsRequest($response, $records)
     {
         $errorMessage = '';
         foreach ($response->response->result->row as $item) {
@@ -1151,6 +1160,26 @@ class EZohoCrm
                 EZohoCrmException::ZOHO_CRM_RESPONSE_ERROR
             );
         }
+    }
+
+    /**
+     * fixOrderInResponseOnMultipleRecordsRequest
+     * Order of rows in response of Zoho CRM API may differ from order of rows in request, this method fixes it.
+     * @param mixed $response response from Zoho CRM API
+     * @return mixed $response response from Zoho CRM API with reordered rows.
+     * @throws EZohoCrmException
+     */
+    public static function fixOrderInResponseOnMultipleRecordsRequest($response)
+    {
+        $newRow = array();
+        foreach ($response->response->result->row as $key => $value) {
+            $newRow[(int)$value->no - 1] = $value;
+            unset($response->response->result->row[$key]);
+        }
+        ksort($newRow);
+        $response->response->result->row = $newRow;
+
+        return $response;
     }
 
     /**
@@ -1175,5 +1204,24 @@ class EZohoCrm
         }
 
         return $response;
+    }
+
+    /**
+     * getRowFieldValue
+     * Get value of field of row in response on multiple records request.
+     * @param \stdClass $row row in response on multiple records request
+     * @param string $fieldName field name
+     * @throws \Exception
+     * @return mixed field value
+     */
+    public static function getRowFieldValue($row, $fieldName)
+    {
+        foreach ($row->success->details->FL as $field) {
+            if ($field->val === $fieldName) {
+                return $field->content;
+            }
+        }
+
+        throw new \Exception("Field with name \"$fieldName\" not found in\n" . EUtils::printVarDump($row, true));
     }
 }
