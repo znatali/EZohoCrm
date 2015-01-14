@@ -13,7 +13,6 @@
  * @license The MIT License
  * @category Yii 1.1
  * @package ext\EZohoCrm
- * @version 2.0
  *
  * Extension was improved by
  * @author: Dmitry Kulikov <kulikovdn@gmail.com>
