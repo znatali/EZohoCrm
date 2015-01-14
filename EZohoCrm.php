@@ -246,11 +246,6 @@ class EZohoCrm
 
         $client->setMethod($method);
 
-        if (isset($getParameters) && array_key_exists('excludeNull', $getParameters)) {
-            $getParameters['newFormat'] = static::getNewFormat($getParameters['excludeNull']);
-            unset($getParameters['excludeNull']);
-        }
-
         $client = $this->setRequestParameters($client, $getParameters, $postParameters, $postBody, $bodyEncodingType);
 
         $client->setAdapter($adapter);
@@ -318,6 +313,10 @@ class EZohoCrm
         }
 
         // GET parameters
+        if (isset($getParameters) && array_key_exists('excludeNull', $getParameters)) {
+            $getParameters['newFormat'] = static::getNewFormat($getParameters['excludeNull']);
+            unset($getParameters['excludeNull']);
+        }
         if (!empty($getParameters)) {
             $getParameters = array_merge($defaultGetParameters, $getParameters);
         } else {
