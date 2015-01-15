@@ -4,6 +4,6 @@
 EZohoCrm
 ========
 
-Version 4.0.0
+Version 5.0.0
 
 An extension for Yii framework to connect to Zoho CRM API.
