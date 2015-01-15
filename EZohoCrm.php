@@ -1241,7 +1241,7 @@ class EZohoCrm
      */
     public static function getRowFieldValue($row, $fieldName)
     {
-        foreach ($row->success->details->FL as $field) {
+        foreach ($row->FL as $field) {
             if ($field->val === $fieldName) {
                 return $field->content;
             }
