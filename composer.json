@@ -13,7 +13,7 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.3.0",
-        "yiisoft/yii": "1.1.15",
+        "yiisoft/yii": ">=1.1.15",
         "tonydspaniard/yii-extensions": "master"
     },
     "repositories": [
