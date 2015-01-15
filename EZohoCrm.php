@@ -122,6 +122,18 @@ class EZohoCrm
     public $curlOptions = array();
 
     /**
+     * Callback function which will be executed before sending of request to Zoho CRM API.
+     * @var null|callable
+     */
+    public $beforeApiCall = null;
+
+    /**
+     * Callback function which will be executed after sending of request to Zoho CRM API.
+     * @var null|callable
+     */
+    public $afterApiCall = null;
+
+    /**
      * MODULE constants
      */
     const MODULE_ACCOUNTS = 'Accounts';
@@ -231,7 +243,8 @@ class EZohoCrm
         $getParameters = null,
         $postParameters = null,
         $postBody = null,
-        $bodyEncodingType = null
+        $bodyEncodingType = null,
+        $rawFile = false
     ) {
         $adapter = new \EHttpClientAdapterCurl();
 
@@ -261,6 +274,11 @@ class EZohoCrm
 
         $this->attemptsCount = 0;
 
+        $request =  $this->request($client, $path, $getParameters, $postParameters);
+        if ($rawFile) {
+            return $request;
+        }
+
         $json = $this->request($client)->getBody();
         $decodedResponse = json_decode($json);
         $jsonLastError = EUtils::getJsonLastError();
@@ -276,7 +294,7 @@ class EZohoCrm
         if (isset($decodedResponse->response->error)) {
             throw new EZohoCrmException(
                 'Error ' . $decodedResponse->response->error->code . ': ' . $decodedResponse->response->error->message .
-                ' Uri was "' . $decodedResponse->response->uri . '".',
+                    ' Uri was "' . $decodedResponse->response->uri . '".',
                 EZohoCrmException::ZOHO_CRM_RESPONSE_ERROR
             );
         }
@@ -342,8 +360,8 @@ class EZohoCrm
         if (!empty($postParameters) && !empty($postBody)) {
             \Yii::log(
                 'Attempt to send POST parameters and POST data. ' .
-                "Setting raw POST data for a request will override any POST parameters or file uploads.\n" .
-                EUtils::printVarDump($client, true),
+                    "Setting raw POST data for a request will override any POST parameters or file uploads.\n" .
+                    EUtils::printVarDump($client, true),
                 'warning',
                 'ext.eZohoCrm'
             );
@@ -371,7 +389,29 @@ class EZohoCrm
      * @throws \EHttpClientException
      * @throws \Exception
      */
-    protected function request($client)
+    protected function request($client,$path=null,$getParameters=null,$postParameters=null)
+    {
+        $id = null;
+        if (is_callable($this->beforeApiCall)) {
+            $id = call_user_func_array($this->beforeApiCall, array($path, $getParameters, $postParameters));
+        }
+
+        $response = $this->requestRecursive($client);
+
+        if (is_callable($this->afterApiCall)) {
+            call_user_func_array($this->afterApiCall, array($id, $response));
+        }
+
+        return $response;
+    }
+
+    /**
+     * @param \EHttpClient $client
+     * @return mixed
+     * @throws \EHttpClientException
+     * @throws \Exception
+     */
+    protected function requestRecursive($client)
     {
         try {
             $this->attemptsCount++;
@@ -383,7 +423,7 @@ class EZohoCrm
             }
             \Yii::log(
                 "exception 'EHttpClientException' with message '{$e->getMessage()}'" .
-                " in {$e->getFile()}:{$e->getLine()}\nStack trace:\n" . $e->getTraceAsString(),
+                    " in {$e->getFile()}:{$e->getLine()}\nStack trace:\n" . $e->getTraceAsString(),
                 'error',
                 'exception.EHttpClientException'
             );
@@ -393,7 +433,7 @@ class EZohoCrm
             } else {
                 throw new EZohoCrmException(
                     "Can't perform request after {$this->attemptsCount} attempts " .
-                    "with {$this->sleepTime} second(s) intervals.",
+                        "with {$this->sleepTime} second(s) intervals.",
                     EZohoCrmException::RETRY_ATTEMPTS_LIMIT
                 );
             }
@@ -1078,7 +1118,7 @@ class EZohoCrm
         if (count($records) > static::MAX_RECORDS_INSERT_UPDATE) {
             throw new EZohoCrmException(
                 'Only the first ' . static::MAX_RECORDS_INSERT_UPDATE .
-                ' records will be considered when inserting multiple records.',
+                    ' records will be considered when inserting multiple records.',
                 EZohoCrmException::RECORDS_INSERT_UPDATE_LIMIT
             );
         }
@@ -1181,7 +1221,7 @@ class EZohoCrm
         if (!empty($errorMessage)) {
             throw new EZohoCrmException(
                 $errorMessage . "\nUri was \"{$response->response->uri}\".\n" . "Records data:\n" .
-                EUtils::printVarDump($records, true),
+                    EUtils::printVarDump($records, true),
                 EZohoCrmException::ZOHO_CRM_RESPONSE_ERROR
             );
         }
@@ -1248,5 +1288,24 @@ class EZohoCrm
         }
 
         throw new \Exception("Field with name \"$fieldName\" not found in\n" . EUtils::printVarDump($row, true));
+    }
+
+    /**
+     * downloadFile
+     * You can use this method to file attached to records by file ID.
+     * @link https://www.zoho.com/crm/help/api/downloadfile.html
+     * @param $id
+     * @return mixed
+     * @throws \Exception
+     */
+    public function downloadFile($id)
+    {
+        $path = static::BASE_URL . $this->module . '/' . __FUNCTION__;
+
+        $getParameters = array(
+            'id' => (string)$id,
+        );
+
+        return $this->zohoCrmApiCall($path, \EHttpClient::GET, $getParameters, null, null, null, true);
     }
 }
